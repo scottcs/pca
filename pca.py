@@ -106,7 +106,7 @@ class PCA(cmd.Cmd):
                 else:
                     pos = '?'
                     percentage = '?'
-                lines.append('{}: [{}] {}'.format(pos, percentage, item[0]))
+                lines.append('{:>2}: [{}] {}'.format(pos, percentage, item[0]))
         else:
             for item in self._items:
                 lines.append('?: {}'.format(item))
