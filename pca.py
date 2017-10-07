@@ -76,7 +76,7 @@ class PCA(cmd.Cmd):
         print('================================')
         print('Step 1: "add <item>" for each item to compare')
         print('Step 2: "compare" to compare all items')
-        print('Step 3: "weights" to set weights')
+        print('Step 3: "weigh" to set weights')
         if self._items:
             self._list_in_order()
 
@@ -87,17 +87,26 @@ class PCA(cmd.Cmd):
     def _list_in_order(self, quiet=False):
         """list all items in order"""
         final = {}
+        total = 0
         lines = []
         for comparison in self._comparisons:
             final.setdefault(comparison.best, 0)
             final.setdefault(comparison.worst, 0)
             final[comparison.best] += comparison.weight
+            total += comparison.weight
         if not quiet:
             print('------------------------------------------------------')
         if final:
+            weighted = False
             for i, item in enumerate(sorted(final.items(), key=itemgetter(1), reverse=True)):
-                pos = item[1] == 0 and '?' or str(i + 1)
-                lines.append('{}: {} ({})'.format(pos, *item))
+                weighted = weighted or item[1] != 0
+                if weighted:
+                    pos = str(i + 1)
+                    percentage = '{:>2}%'.format(int(((float(item[1]) / float(total)) * 100.0) + 0.5))
+                else:
+                    pos = '?'
+                    percentage = '?'
+                lines.append('{}: [{}] {}'.format(pos, percentage, item[0]))
         else:
             for item in self._items:
                 lines.append('?: {}'.format(item))
@@ -118,6 +127,7 @@ class PCA(cmd.Cmd):
 
     def do_compare(self, _):
         """compare all items in the list"""
+        self._comparisons = []
         for item1 in self._items:
             for item2 in self._items:
                 if item1 != item2:
@@ -126,7 +136,7 @@ class PCA(cmd.Cmd):
                         self._comparisons.append(comparison)
                         comparison.request_best()
 
-    def do_weights(self, _):
+    def do_weigh(self, _):
         """set weights for each comparison"""
         for comparison in self._comparisons:
             comparison.request_weight()
