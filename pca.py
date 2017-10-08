@@ -38,11 +38,14 @@ class Comparison(object):
         weight = 0
         while weight < 1 or weight > 3:
             print('{} > {}'.format(*self._items))
-            answer = input('  by how much [1 is a little, 3 is a lot] (1-3)? ')
-            try:
-                weight = int(answer)
-            except ValueError:
-                weight = 0
+            answer = input('  by how much (1 is a little, 3 is a lot) [1-3] or [s]wap)? ').strip()
+            if answer.lower().startswith('s'):
+                self.set_best(self.worst)
+            else:
+                try:
+                    weight = int(answer)
+                except ValueError:
+                    pass
         self.weight = weight
 
     def set_best(self, item):
@@ -137,19 +140,25 @@ class PCA(cmd.Cmd):
     def do_compare(self, _):
         """Compare all items in the list"""
         self._comparisons = []
-        for item1 in self._items:
-            for item2 in self._items:
-                if item1 != item2:
-                    comparison = Comparison(item1, item2)
-                    if comparison not in self._comparisons:
-                        self._comparisons.append(comparison)
-                        comparison.request_best()
+        try:
+            for item1 in self._items:
+                for item2 in self._items:
+                    if item1 != item2:
+                        comparison = Comparison(item1, item2)
+                        if comparison not in self._comparisons:
+                            self._comparisons.append(comparison)
+                            comparison.request_best()
+        except EOFError:
+            self._comparisons = []
         self._print_list()
 
     def do_weigh(self, _):
         """Set weights for each comparison"""
-        for comparison in self._comparisons:
-            comparison.request_weight()
+        try:
+            for comparison in self._comparisons:
+                comparison.request_weight()
+        except EOFError:
+            pass
         self._print_list()
 
     def do_save(self, line):
