@@ -6,6 +6,8 @@ import argparse
 import cmd
 from operator import itemgetter
 
+import os
+
 
 class Comparison(object):
     """Comparison of two items"""
@@ -78,14 +80,16 @@ class PCA(cmd.Cmd):
         print('Step 2: "compare" to compare all items')
         print('Step 3: "weigh" to set weights')
         if self._items:
-            self._list_in_order()
+            self._print_list()
 
-    def postcmd(self, stop, _):
-        self._list_in_order()
-        return stop
+    def _print_list(self):
+        print('------------------------------------------------------')
+        for line in self._get_ordered_list():
+            print(line)
+        print('------------------------------------------------------')
 
-    def _list_in_order(self, quiet=False):
-        """list all items in order"""
+    def _get_ordered_list(self):
+        """List all items in order"""
         final = {}
         total = 0
         lines = []
@@ -94,8 +98,6 @@ class PCA(cmd.Cmd):
             final.setdefault(comparison.worst, 0)
             final[comparison.best] += comparison.weight
             total += comparison.weight
-        if not quiet:
-            print('------------------------------------------------------')
         if final:
             weighted = False
             for i, item in enumerate(sorted(final.items(), key=itemgetter(1), reverse=True)):
@@ -110,23 +112,30 @@ class PCA(cmd.Cmd):
         else:
             for item in self._items:
                 lines.append('?: {}'.format(item))
-        if not quiet:
-            for line in lines:
-                print(line)
-            print('------------------------------------------------------')
         return lines
 
-    def _write_to_file(self):
-        if self._outfile:
-            with open(self._outfile, 'w') as f:
-                f.writelines('\n'.join(self._list_in_order(quiet=True)))
+    def _write_to_file(self, filename=None):
+        filename = filename or self._outfile
+        if filename:
+            if os.path.exists(filename):
+                print('File [{}] already exists.'.format(filename))
+                ok = input('Overwrite (y/N)? ').strip()
+                if ok.lower().startswith('y'):
+                    with open(filename, 'w') as f:
+                        f.writelines('\n'.join(self._get_ordered_list()))
+                        print('Wrote: {}'.format(filename))
 
     def do_add(self, line):
-        """add an item to the list"""
+        """Add an item to the list"""
         self._items.add(line)
+        self._print_list()
+
+    def do_list(self, _):
+        """List all items (in order, if order is established)"""
+        self._print_list()
 
     def do_compare(self, _):
-        """compare all items in the list"""
+        """Compare all items in the list"""
         self._comparisons = []
         for item1 in self._items:
             for item2 in self._items:
@@ -135,14 +144,20 @@ class PCA(cmd.Cmd):
                     if comparison not in self._comparisons:
                         self._comparisons.append(comparison)
                         comparison.request_best()
+        self._print_list()
 
     def do_weigh(self, _):
-        """set weights for each comparison"""
+        """Set weights for each comparison"""
         for comparison in self._comparisons:
             comparison.request_weight()
+        self._print_list()
+
+    def do_save(self, line):
+        """Save results to a file"""
+        self._write_to_file(line.strip())
 
     def do_quit(self, _):
-        """quit the program"""
+        """Quit the program"""
         self._write_to_file()
         return True
 
