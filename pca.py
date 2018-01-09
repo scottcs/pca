@@ -77,7 +77,7 @@ class PCA(cmd.Cmd):
 
     def preloop(self):
         print('================================')
-        print('|| Paired Comparison Analysys ||')
+        print('|| Paired Comparison Analysis ||')
         print('================================')
         print('Step 1: "add <item>" for each item to compare')
         print('Step 2: "compare" to compare all items')
