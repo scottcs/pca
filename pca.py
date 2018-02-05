@@ -208,6 +208,17 @@ class PCA(cmd.Cmd):
 
     def do_compare(self, _):
         """Compare all items in the list"""
+        self._do_compare()
+
+    def do_comparison(self, _):
+        """Alias for 'compare'"""
+        self._do_compare()
+
+    def do_comparisons(self, _):
+        """Alias for 'compare'"""
+        self._do_compare()
+
+    def _do_compare(self):
         self._comparisons = []
         try:
             combos = list(combinations(self._items, 2))
@@ -237,6 +248,17 @@ class PCA(cmd.Cmd):
 
     def do_weigh(self, _):
         """Set weights for each comparison"""
+        self._do_weigh()
+
+    def do_weight(self, _):
+        """Alias for 'weigh'"""
+        self._do_weigh()
+
+    def do_weights(self, _):
+        """Alias for 'weigh'"""
+        self._do_weigh()
+
+    def _do_weigh(self):
         try:
             seeker = SeekableIterator(self._comparisons)
             for comparison in seeker:
