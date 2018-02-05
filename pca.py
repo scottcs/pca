@@ -119,14 +119,20 @@ class PCA(cmd.Cmd):
 
     def _write_to_file(self, filename=None):
         filename = filename or self._outfile
+        print(filename)
         if filename:
-            if os.path.exists(filename):
+            if not os.path.exists(filename):
+                self._write_to_file_forced(filename)
+            else:
                 print('File [{}] already exists.'.format(filename))
                 ok = input('Overwrite (y/N)? ').strip()
                 if ok.lower().startswith('y'):
-                    with open(filename, 'w') as f:
-                        f.writelines('\n'.join(self._get_ordered_list()))
-                        print('Wrote: {}'.format(filename))
+                    self._write_to_file_forced(filename)
+
+    def _write_to_file_forced(self, filename):
+        with open(filename, 'w') as f:
+            f.writelines('\n'.join(self._get_ordered_list()))
+            print('Wrote: {}'.format(filename))
 
     def do_add(self, line):
         """Add an item to the list"""
