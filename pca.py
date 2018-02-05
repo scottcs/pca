@@ -119,15 +119,18 @@ class PCA(cmd.Cmd):
 
     def _write_to_file(self, filename=None):
         filename = filename or self._outfile
-        print(filename)
         if filename:
             if not os.path.exists(filename):
                 self._write_to_file_forced(filename)
             else:
                 print('File [{}] already exists.'.format(filename))
-                ok = input('Overwrite (y/N)? ').strip()
+                ok = input('Overwrite (y/N/r)? ').strip()
                 if ok.lower().startswith('y'):
                     self._write_to_file_forced(filename)
+                if ok.lower().startswith('r'):
+                    new_name = input('New file name: ').strip()
+                    if new_name:
+                        self._write_to_file(filename=new_name)
 
     def _write_to_file_forced(self, filename):
         with open(filename, 'w') as f:
