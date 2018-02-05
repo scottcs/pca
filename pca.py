@@ -4,6 +4,7 @@
 
 import argparse
 import cmd
+from itertools import combinations
 from operator import itemgetter
 
 import os
@@ -27,12 +28,18 @@ class Comparison(object):
         return self._items[1]
 
     def request_best(self):
+        """Request the user to decide which item is best.
+
+        :return: The chosen item letter in lower case
+        """
         best = ''
-        while best.lower() not in ('a', 'b'):
+        while best.lower() not in ('a', 'b', 'u'):
             print('Which is best?')
             print('  [A] {}\n  [B] {}'.format(*self._items))
-            best = input('A or B? ').strip()
-        self.set_best(self._items[ord(best.lower())-97])
+            best = input('A or B (or [U]ndo)? ').strip()
+        if best.lower() in ('a', 'b'):
+            self.set_best(self._items[ord(best.lower())-97])
+        return best.lower()
 
     def request_weight(self):
         weight = 0
@@ -59,6 +66,53 @@ class Comparison(object):
 
     def __str__(self):
         return '{} > {} ({})'.format(*self._items, self.weight)
+
+
+class SeekableIterator(object):
+    """An iterator that supports seeking backwards or forwards.
+
+    From StackOverflow: https://stackoverflow.com/questions/11108048/rewinding-iteration
+    """
+
+    def __init__(self, iterable):
+        """Make a SeekableIterator over an iterable collection."""
+        self.iterable = iterable
+        self.index = None
+
+    def __iter__(self):
+        """Start the iteration."""
+        self.index = 0
+        return self
+
+    def __next__(self):
+        """Return the next item in the iterator."""
+        try:
+            value = self.iterable[self.index]
+            self.index += 1
+            return value
+        except IndexError:
+            raise StopIteration
+
+    def seek(self, n, relative=False):
+        """Adjust the loop counter, either relatively or to an absolute index.
+        Note that seeking 0 replays the current item. Seeking -1 goes to
+        the previous item. If the adjustment is too low, the index is set to
+        the first item.
+
+        :param n: amount to seek
+        :param relative: if True, seek relative to the current index
+        :raises: IndexError if seeking forward beyond iterable's bounds
+         """
+
+        if relative:
+            # __next__() has already increased the index by 1
+            self.index += (n - 1)
+        else:
+            self.index = n
+        if self.index < 0:
+            self.index = 0
+        if self.index >= len(self.iterable):
+            raise IndexError
 
 
 class PCA(cmd.Cmd):
@@ -151,13 +205,27 @@ class PCA(cmd.Cmd):
         """Compare all items in the list"""
         self._comparisons = []
         try:
-            for item1 in self._items:
-                for item2 in self._items:
-                    if item1 != item2:
-                        comparison = Comparison(item1, item2)
-                        if comparison not in self._comparisons:
-                            self._comparisons.append(comparison)
-                            comparison.request_best()
+            combos = list(combinations(self._items, 2))
+            seeker = SeekableIterator(combos)
+            for item1, item2 in seeker:
+                comparison = Comparison(item1, item2)
+                try:
+                    # Remove comparison from our list in case we're undoing.
+                    # Get the old actual comparison by index to print the choice the
+                    # user already made (since choice doesn't matter in Comparison's
+                    # __eq__() method).
+                    index = self._comparisons.index(comparison)
+                    removed = self._comparisons[index]
+                    self._comparisons.remove(comparison)
+                    print(f'Undoing: {removed}')
+                except ValueError:
+                    pass  # ok; comparison not stored yet
+                result = comparison.request_best()
+                if result == 'u':  # undo
+                    seeker.seek(-1, relative=True)
+                else:
+                    self._comparisons.append(comparison)
+                    print(f'Stored: {comparison}')
         except EOFError:
             self._comparisons = []
         self._print_list()
@@ -165,7 +233,8 @@ class PCA(cmd.Cmd):
     def do_weigh(self, _):
         """Set weights for each comparison"""
         try:
-            for comparison in self._comparisons:
+            seeker = SeekableIterator(self._comparisons)
+            for comparison in seeker:
                 comparison.request_weight()
         except EOFError:
             pass
