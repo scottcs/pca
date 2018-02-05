@@ -44,10 +44,12 @@ class Comparison(object):
     def request_weight(self):
         weight = 0
         while weight < 1 or weight > 3:
-            print('{} > {}'.format(*self._items))
-            answer = input('  by how much (1 is a little, 3 is a lot) [1-3] or [s]wap)? ').strip()
+            print(self)
+            answer = input('  by how much (1 is a little, 3 is a lot) [1-3] or [s]wap, [u]ndo)? ').strip()
             if answer.lower().startswith('s'):
                 self.set_best(self.worst)
+            if answer.lower().startswith('u'):
+                return 'u'
             else:
                 try:
                     weight = int(answer)
@@ -65,7 +67,10 @@ class Comparison(object):
         return other.best in self._items and other.worst in self._items
 
     def __str__(self):
-        return '{} > {} ({})'.format(*self._items, self.weight)
+        if self.weight:
+            return '{} > {} ({})'.format(*self._items, self.weight)
+        else:
+            return '{} > {}'.format(*self._items)
 
 
 class SeekableIterator(object):
@@ -235,7 +240,8 @@ class PCA(cmd.Cmd):
         try:
             seeker = SeekableIterator(self._comparisons)
             for comparison in seeker:
-                comparison.request_weight()
+                if comparison.request_weight() == 'u':  # Undo
+                    seeker.seek(-1, relative=True)
         except EOFError:
             pass
         self._print_list()
