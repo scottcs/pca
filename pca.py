@@ -107,7 +107,8 @@ class PCA(cmd.Cmd):
                 weighted = weighted or item[1] != 0
                 if weighted:
                     pos = str(i + 1)
-                    percentage = '{:>2}%'.format(int(((float(item[1]) / float(total)) * 100.0) + 0.5))
+                    percentage_calc = int(((float(item[1]) / float(total)) * 100.0) + 0.5)
+                    percentage = f'{percentage_calc:>2}%'
                 else:
                     pos = '?'
                     percentage = '?'
@@ -179,6 +180,7 @@ class PCA(cmd.Cmd):
         self._write_to_file()
         return True
 
+    # noinspection PyPep8Naming
     def do_EOF(self, _):
         """End of file = quit"""
         print()
@@ -188,7 +190,8 @@ class PCA(cmd.Cmd):
 
 def parse_args():
     """Parse command-line arguments and return parse obj"""
-    parser = argparse.ArgumentParser(prog=__file__, description='performs Paired Comparison Analysis')
+    parser = argparse.ArgumentParser(prog=__file__,
+                                     description='performs Paired Comparison Analysis')
     parser.add_argument('-f', '--file',
                         action='store',
                         help='Get list of options from a text file (one per line)')
