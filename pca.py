@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Paired Comparison Analysis tool"""
-
 import argparse
 import cmd
 from itertools import combinations
@@ -42,13 +41,18 @@ class Comparison(object):
         return best.lower()
 
     def request_weight(self):
+        """Request the user to weigh each item.
+
+        :return: 'u' if the user requested an undo, otherwise None
+        """
         weight = 0
         while weight < 1 or weight > 3:
             print(self)
-            answer = input('  by how much (1 is a little, 3 is a lot) [1-3] or [s]wap, [u]ndo)? ').strip()
-            if answer.lower().startswith('s'):
+            answer = input('  by how much (1 is a little, 3 is a lot) [1-3] or [s]wap, [u]ndo)? ')
+            answer = answer.strip().lower()
+            if answer.startswith('s'):
                 self.set_best(self.worst)
-            if answer.lower().startswith('u'):
+            if answer.startswith('u'):
                 return 'u'
             else:
                 try:
@@ -58,12 +62,17 @@ class Comparison(object):
         self.weight = weight
 
     def set_best(self, item):
+        """Set the best item of the comparison.
+
+        :param item: The item which is best.
+        """
         if item not in self._items:
             raise RuntimeError('Unknown item in comparison: {}'.format(item))
         if item == self.worst:
             self._items = (self._items[1], self._items[0])
 
     def __eq__(self, other):
+        """Two Compare objects are equal if they have the same items; order doesn't matter."""
         return other.best in self._items and other.worst in self._items
 
     def __str__(self):
@@ -178,6 +187,10 @@ class PCA(cmd.Cmd):
         return lines
 
     def _write_to_file(self, filename=None):
+        """Write to the file if it doesn't exist, otherwise ask the user what to do.
+
+        :param filename: Path to the file
+        """
         filename = filename or self._outfile
         if filename:
             if not os.path.exists(filename):
@@ -193,6 +206,10 @@ class PCA(cmd.Cmd):
                         self._write_to_file(filename=new_name)
 
     def _write_to_file_forced(self, filename):
+        """Do the actual file write.
+
+        :param filename: Path to the file
+        """
         with open(filename, 'w') as f:
             f.writelines('\n'.join(self._get_ordered_list()))
             print('Wrote: {}'.format(filename))
@@ -219,6 +236,10 @@ class PCA(cmd.Cmd):
         self._do_compare()
 
     def _do_compare(self):
+        """Do the actual work of comparing all of the items in the list.
+
+        Ask the user to compare each item, looping through and rewinding if requested.
+        """
         self._comparisons = []
         try:
             combos = list(combinations(self._items, 2))
@@ -259,6 +280,10 @@ class PCA(cmd.Cmd):
         self._do_weigh()
 
     def _do_weigh(self):
+        """Do the actual work of weighing all of the items in the list.
+
+        Loop through each comparison and ask the user, rewinding if requested.
+        """
         try:
             seeker = SeekableIterator(self._comparisons)
             for comparison in seeker:
@@ -299,7 +324,6 @@ def parse_args():
 
 
 def main():
-    """ Main function """
     args = parse_args()
     items = None
     if args.file:
